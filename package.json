@@ -1,0 +1,13 @@
+{
+  "name": "gravoff",
+  "version": "2.0.0",
+  "private": true,
+  "license": "MIT",
+  "repository": "github:weijt606/gravoff",
+  "description": "GRAVOFF – a tiny anti-gravity car game in plain JavaScript and Canvas. Gravity is optional. Landing isn't.",
+  "scripts": {
+    "start": "node tools/serve.js",
+    "sim:loop": "node tools/sim-loop.js",
+    "sim:kick": "node tools/sim-kick.js"
+  }
+}

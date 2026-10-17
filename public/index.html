@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>GRAVOFF · 反重力试驾</title>
+  <meta name="description" content="GRAVOFF – an independent fan-made browser game: drive upside down on a giant loop and jet over a row of cars. Gravity is optional. Landing isn't.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="panel hud-tl">
+      <div class="brand">GRAV<span>OFF</span></div>
+      <div class="timer" id="timer">00:00.00</div>
+      <div class="row"><span id="cpLabel" data-i18n="hud.inv">倒挂行驶</span><b id="cpText">0 m</b></div>
+      <div class="row"><span data-i18n="hud.score">得分</span><b id="score">0</b></div>
+      <div class="row dim"><span data-i18n="hud.best">最佳</span><b id="best">--</b></div>
+    </div>
+
+    <div class="panel hud-tr">
+      <div class="speed"><b id="speed">0</b><span>km/h</span></div>
+      <div class="row"><span data-i18n="hud.alt">高度</span><b id="alt">0 m</b></div>
+      <div class="row"><span data-i18n="hud.sink">下降速度</span><b id="sink">0.0 m/s</b></div>
+      <div class="row" id="targetRow"><span data-i18n="hud.target">距目标点</span><b id="target">--</b></div>
+      <div class="state" id="state"></div>
+    </div>
+
+    <div id="hint" class="hint"></div>
+    <div id="popups"></div>
+    <div id="flash"></div>
+
+    <div class="panel devices" id="devices">
+      <div class="dev">
+        <div class="dev-head"><i>①②</i><span data-i18n="dev.fans">吸附风扇</span><em id="fanTag">↑ ↓</em></div>
+        <div class="bar"><div class="set" id="fanSet"></div><div class="out" id="fanOut"></div><div class="need" id="fanNeed"></div></div>
+        <div class="dev-ctl"><input type="range" id="fanRange" min="0" max="100" step="5" aria-label="fan power"><b class="val" id="fanVal">0%</b></div>
+      </div>
+      <div class="dev jet">
+        <div class="dev-head"><i>③④</i><span data-i18n="dev.jets">冷气推进器</span><em data-i18n="dev.jets.key">按住 空格</em></div>
+        <div class="bar"><div class="out" id="jetOut"></div></div>
+        <div class="dev-ctl"><b class="val" id="jetVal"></b></div>
+      </div>
+      <div class="dev energy">
+        <div class="dev-head"><span data-i18n="dev.energy">能量</span></div>
+        <div class="bar"><div class="out" id="energyBar"></div></div>
+        <div class="dev-ctl"><b class="val" id="energyVal">100%</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="touch" class="hidden">
+    <div class="tc tc-left">
+      <button data-key="ArrowLeft">◀<small data-i18n="touch.brake">刹车</small></button>
+      <button data-key="ArrowRight">▶<small data-i18n="touch.go">加速</small></button>
+    </div>
+    <div class="tc tc-right">
+      <div class="tc-col">
+        <button data-key="ArrowUp" class="sm" data-i18n="touch.fanUp">风扇＋</button>
+        <button data-key="ArrowDown" class="sm" data-i18n="touch.fanDn">风扇－</button>
+        <button data-key="KeyR" class="sm" data-i18n="touch.retry">重来</button>
+      </div>
+      <div class="tc-col">
+        <button data-key="KeyF" class="sm"><span data-i18n="touch.flip">翻转</span></button>
+        <button data-key="KeyG" class="sm"><span data-i18n="touch.roll">侧滚</span></button>
+      </div>
+      <button data-key="Space" class="big" data-i18n="touch.jet">推进</button>
+    </div>
+  </div>
+
+  <div class="overlay landing" id="menu">
+    <div class="lang" role="group" aria-label="Language / 语言">
+      <button data-lang="en" lang="en">EN</button><button data-lang="zh" lang="zh-CN">中文</button>
+    </div>
+
+    <header class="hero">
+      <div class="hero-eyebrow" data-i18n="menu.eyebrow">ANTI-GRAVITY DRIVING EXPERIMENT</div>
+      <h1 class="logo" aria-label="GRAVOFF">GRAV<span>OFF</span></h1>
+      <p class="slogan" lang="en">Gravity is optional. Landing isn’t.</p>
+    </header>
+
+    <section class="launch" aria-labelledby="levelsLabel">
+      <h2 class="sr-only" id="levelsLabel" data-i18n="menu.levels">选择关卡</h2>
+      <div class="levels" id="modes" role="radiogroup" aria-labelledby="levelsLabel">
+        <button class="mode on" data-mode="loop" role="radio" aria-checked="true">
+          <svg class="lvl-ico" viewBox="0 0 48 32" aria-hidden="true">
+            <path d="M2 29h22a12 12 0 0 0 0-24H8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+            <rect x="9" y="1.6" width="8" height="3.4" rx="1.2" fill="currentColor" class="ico-car"/>
+          </svg>
+          <span class="lvl-text">
+            <span class="lvl-name"><i>01</i><span data-i18n="mode.loop">倒立半环</span></span>
+            <span class="lvl-desc" data-i18n="mode.loop.desc"></span>
+          </span>
+        </button>
+        <button class="mode" data-mode="kick" role="radio" aria-checked="false">
+          <svg class="lvl-ico" viewBox="0 0 48 32" aria-hidden="true">
+            <path d="M3 29C12 4 36 4 45 29" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3" stroke-linecap="round"/>
+            <rect x="12" y="23" width="6" height="6" rx="1.2" fill="currentColor" opacity=".55"/>
+            <rect x="20" y="22" width="7" height="7" rx="1.2" fill="currentColor" opacity=".55"/>
+            <rect x="29" y="19" width="6" height="10" rx="1.2" fill="currentColor" opacity=".55"/>
+            <rect x="20" y="8.5" width="8" height="3.4" rx="1.2" fill="currentColor" class="ico-car"/>
+          </svg>
+          <span class="lvl-text">
+            <span class="lvl-name"><i>02</i><span data-i18n="mode.kick">飞越车阵</span></span>
+            <span class="lvl-desc" data-i18n="mode.kick.desc"></span>
+          </span>
+        </button>
+      </div>
+
+      <form class="pilot" id="pilotForm" autocomplete="off" novalidate>
+        <button type="submit" class="cta" id="startBtn" data-i18n="btn.start">开始游戏</button>
+      </form>
+
+      <div class="secondary">
+        <button class="ghost-btn" id="howBtn" aria-haspopup="dialog" aria-controls="howto"><span data-i18n="btn.how">操作说明</span> <b aria-hidden="true">?</b></button>
+      </div>
+      <div class="best-line" id="menuBest"></div>
+    </section>
+
+    <footer class="foot">
+      <p class="disclaimer-line" data-i18n="disclaimer.short"></p>
+    </footer>
+  </div>
+
+
+  <div class="overlay hidden" id="howto" role="dialog" aria-modal="true" aria-labelledby="howTitle">
+    <div class="card how">
+      <h2 id="howTitle" data-i18n="how.title">操作说明</h2>
+      <dl class="keys-list">
+        <dt><kbd>→</kbd></dt><dd data-i18n="how.throttle"></dd>
+        <dt><kbd>←</kbd></dt><dd data-i18n="how.brake"></dd>
+        <dt><kbd>↑</kbd><kbd>↓</kbd></dt><dd data-i18n="how.fans"></dd>
+        <dt><kbd class="wide" data-i18n="key.space">空格</kbd></dt><dd data-i18n="how.jets"></dd>
+        <dt><kbd>F</kbd></dt><dd data-i18n="how.kick"></dd>
+        <dt><kbd>G</kbd></dt><dd data-i18n="how.barrel"></dd>
+      </dl>
+      <p class="how-note" data-i18n="how.stop"></p>
+      <div class="keys-mini">
+        <span><kbd>R</kbd> <span data-i18n="how.retry"></span></span>
+        <span><kbd>P</kbd> <span data-i18n="how.pause"></span></span>
+        <span><kbd>M</kbd> <span data-i18n="how.mute"></span></span>
+      </div>
+      <p class="how-note" data-i18n="how.note"></p>
+      <button class="cta" id="howClose" data-i18n="btn.gotIt">知道了</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="pause">
+    <div class="card small">
+      <h2 data-i18n="pause.title">已暂停</h2>
+      <button class="cta" id="resumeBtn" data-i18n="btn.resume">继续</button>
+      <button class="ghost" id="retryBtn" data-i18n="btn.retry">重来这一次</button>
+      <button class="ghost" id="restartBtn" data-i18n="btn.restart">从头开始</button>
+      <button class="ghost" id="menuBtn" data-i18n="btn.toMenu">返回菜单</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="finish">
+    <div class="card result">
+      <div class="eyebrow" id="resMode"></div>
+      <div class="grade-row">
+        <div class="grade" id="resGrade">S</div>
+        <div class="grade-info">
+          <div class="grade-title" id="resTitle"></div>
+          <div class="result-score"><b id="resScore">0</b><span data-i18n="res.points">分</span></div>
+        </div>
+      </div>
+      <div class="parts" id="resParts"></div>
+      <div class="rank-line" id="resRank"></div>
+      <div class="cast-box">
+        <span class="cast-badge" id="resAISrc"></span>
+        <p class="cast-comment" id="resComment"></p>
+        <p class="cast-tip" id="resTip"></p>
+      </div>
+      <div class="result-grid" id="resGrid"></div>
+      <div class="actions">
+        <button class="cta" id="againBtn" data-i18n="btn.again">再来一次</button>
+        <button class="ghost inline" id="menuBtn2" data-i18n="btn.menu">换个场景</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/i18n.js"></script>
+  <script src="js/score.js"></script>
+  <script src="js/quips.js"></script>
+  <script src="js/record.js"></script>
+  <script src="js/track.js"></script>
+  <script src="js/car.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
