@@ -4,6 +4,8 @@
 [![中文](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87-e5534b)](README.zh-CN.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+[![Play now](https://img.shields.io/badge/%E2%96%B6%20Play_now-foudreai.com-ff3b45?style=for-the-badge)](https://foudreai.com)
+
 **Gravity is optional. Landing isn't.**
 
 A tiny browser game about a sports car with suction fans and cold-gas thrusters: drive upside down, fly over a row of cars, and land on the target. Plain JavaScript + Canvas, no build step, no dependencies. Works on desktop and on phones (portrait or landscape).

@@ -4,6 +4,8 @@
 [![中文](https://img.shields.io/badge/README-%E4%B8%AD%E6%96%87-e5534b)](README.zh-CN.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+[![立即试玩](https://img.shields.io/badge/%E2%96%B6%20%E7%AB%8B%E5%8D%B3%E8%AF%95%E7%8E%A9-foudreai.com-ff3b45?style=for-the-badge)](https://foudreai.com)
+
 **重力可选，落地必修。**（Gravity is optional. Landing isn't.）
 
 一个小小的浏览器游戏：一辆装了吸附风扇和冷气推进器的跑车，倒挂行驶、飞越车阵、精准落在目标点上。纯 JavaScript + Canvas，不需要构建，没有任何依赖。电脑和手机（横屏、竖屏）都能玩。
