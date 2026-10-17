@@ -46,7 +46,7 @@
       if (code === 'KeyE') setFans(1);
     }
     if (code === 'KeyP' || code === 'Escape') togglePause();
-    if (code === 'KeyM') sfx.setMuted(!sfx.muted);
+    if (code === 'KeyM') { sfx.setMuted(!sfx.muted); syncSound(); }
   }
   addEventListener('keydown', (e) => {
     if (!$('howto').classList.contains('hidden')) {   // 操作说明弹窗打开时：Esc 关闭，其他键不进游戏
@@ -63,14 +63,67 @@
 
   const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (isTouch) document.body.classList.add('touch');
-  document.querySelectorAll('#touch button').forEach((b) => {
-    const code = b.dataset.key;
-    const down = (e) => { e.preventDefault(); b.classList.add('on'); sfx.init(); press(code); };
-    const up = (e) => { e.preventDefault(); b.classList.remove('on'); keys[code] = false; };
-    b.addEventListener('pointerdown', down);
-    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
+  if (isTouch) {
+    document.body.classList.add('touch');
+    // 操作说明里换成触屏按钮的说法（要在下面 I18N.apply() 之前改）
+    $('howFans').dataset.i18n = 'how.fansT'; $('howStop').dataset.i18n = 'how.stopT'; $('howNote').dataset.i18n = 'how.noteT';
+  }
+  // 触屏按钮：每根手指对应一个按钮。按住的按钮（◀ ▶ 风扇 推进）之间可以直接滑动切换，手指滑出按钮也不会松开
+  const HOLD = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space']);
+  const held = new Map();   // pointerId → 按钮
+  function touchOn(b) {
+    b.classList.add('on'); sfx.init();
+    if (navigator.vibrate) navigator.vibrate(8);   // 安卓：轻微震动反馈
+    press(b.dataset.key);
+  }
+  function touchOff(b) {
+    const still = [...held.values()];
+    if (!still.includes(b)) b.classList.remove('on');
+    if (!still.some((x) => x.dataset.key === b.dataset.key)) keys[b.dataset.key] = false;
+  }
+  const tc = $('touch');
+  tc.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    e.preventDefault();
+    held.set(e.pointerId, b); touchOn(b);
   });
+  tc.addEventListener('pointermove', (e) => {
+    const old = held.get(e.pointerId);
+    if (!old || !HOLD.has(old.dataset.key)) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY), b = el && el.closest('#touch button');
+    if (!b || b === old || !HOLD.has(b.dataset.key)) return;
+    held.set(e.pointerId, b); touchOff(old); touchOn(b);
+  });
+  const touchEnd = (e) => { const b = held.get(e.pointerId); if (b) { held.delete(e.pointerId); touchOff(b); } };
+  tc.addEventListener('pointerup', touchEnd); tc.addEventListener('pointercancel', touchEnd);
+  tc.addEventListener('contextmenu', (e) => e.preventDefault());
+  // 阻止触摸之后浏览器补发的 click：否则按 ❚❚ 弹出暂停菜单后，这次 click 会落到菜单里的按钮上
+  tc.addEventListener('touchstart', (e) => { if (e.target.closest('button')) e.preventDefault(); }, { passive: false });
+  function releaseTouch() { for (const b of held.values()) b.classList.remove('on'); held.clear(); }
+  addEventListener('blur', releaseTouch);
+  // 手机切到别的应用 / 锁屏：自动暂停，回来不会直接摔车
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden || !isTouch) return;
+    releaseTouch(); for (const k in keys) keys[k] = false;
+    if (state === 'play' && !ended) togglePause();
+  });
+  // 触屏：量出上方面板和下方按钮挡住的高度，镜头把车放在中间空出来的区域里；竖屏横向视野收窄，车和赛道更大
+  function fitFrame() {
+    if (!isTouch || state === 'menu') { renderer.setFrame(null); return; }
+    const W = innerWidth, H = innerHeight;
+    let top = 0, bottom = H;
+    for (const el of document.querySelectorAll('#hud .panel, #hint')) {   // 提示条按一行高度预留
+      const r = el.getBoundingClientRect();
+      if (r.height && r.left < W * 0.62 && r.right > W * 0.38) top = Math.max(top, el.id === 'hint' ? r.top + 34 : r.bottom);
+    }
+    for (const el of document.querySelectorAll('#touch .tc-left button, #touch .tc-right button')) {
+      const r = el.getBoundingClientRect();
+      if (r.height) bottom = Math.min(bottom, r.top);
+    }
+    renderer.setFrame({ top: top + 4, bottom: H - bottom + 4, viewW: H > W ? 28 : 40 });
+  }
+  addEventListener('resize', () => setTimeout(fitFrame, 60));
 
   function readInput(dt) {
     if (ended) {   // 已落地：松开推进器，自动刹停
@@ -140,7 +193,7 @@
     state = 'play';
     ['menu', 'finish', 'pause'].forEach((id) => $(id).classList.add('hidden'));
     $('hud').classList.remove('hidden');
-    if (isTouch) $('touch').classList.remove('hidden');
+    if (isTouch) { $('touch').classList.remove('hidden'); fitFrame(); updateCamera(10); }
     showBest();
     popup(modeName(mode), T('start.' + mode));
   }
@@ -149,6 +202,7 @@
     music.stop();
     ['pause', 'finish', 'hud', 'touch'].forEach((id) => $(id).classList.add('hidden'));
     $('menu').classList.remove('hidden');
+    fitFrame();
     loadCourse(); resetMenuCar();
     showBest();
   }
@@ -175,6 +229,9 @@
   $('resumeBtn').onclick = togglePause;
   $('retryBtn').onclick = () => { togglePause(); restartAttempt(); };
   $('menuBtn').onclick = toMenu;
+  const syncSound = () => { $('soundBtn').textContent = T(sfx.muted ? 'sound.off' : 'sound.on'); };
+  $('soundBtn').onclick = () => { sfx.setMuted(!sfx.muted); syncSound(); };
+  CF.I18N.onChange(syncSound); syncSound();
   $('menuBtn2').onclick = toMenu;
   const modeBtns = [...document.querySelectorAll('.mode')];
   function pickMode(b) {
@@ -257,7 +314,7 @@
     if (state !== 'finish') return;
     $('resComment').classList.remove('loading');
     $('resComment').textContent = c.comment;
-    $('resTip').textContent = c.tip ? '💡 ' + c.tip : '';
+    $('resTip').textContent = c.tip ? '💡 ' + CF.I18N.fill(c.tip) : '';
   }
 
   function renderResult(r) {
@@ -548,7 +605,8 @@
       return;
     }
     const sp = Math.hypot(car.vx, car.vy);
-    let tx = car.x + Math.max(-14, Math.min(14, car.vx * 0.35));
+    const LA = 14 * renderer.frame.viewW / 40;   // 镜头前瞻：桌面 ±14 m，竖屏视野窄就短一点
+    let tx = car.x + Math.max(-LA, Math.min(LA, car.vx * 0.35));
     let ty = car.y + 2 + Math.max(-6, Math.min(6, car.vy * 0.2));
     let zt = Math.max(0.55, Math.min(1, 1 / (1 + Math.max(0, sp - 12) / 60 + (car.nW === 0 ? 0.2 : 0))));
     const F = course.focus;
@@ -564,9 +622,19 @@
       zt = Math.min(zt, Math.max(0.5, 22 / (car.y + 12)));
       if (course.pad) tx = car.x + (((course.pad.x0 + course.pad.x1) / 2) - car.x) * 0.3;
     }
+    // 触屏：始终把车留在面板和按钮之间的区域里；竖屏视野窄，还不拉得太远（桌面不变）
+    const fr = renderer.frame;
+    let yMin = 5;   // 镜头最低高度：地面在画面中心以下 5 m
+    if (fr.top > 0) {
+      if (fr.viewW < 40) zt = Math.max(zt, 0.72);
+      const S = renderer.baseS * zt, hh = Math.max(0, (renderer.H - fr.top - fr.bottom) / 2 / S - 2.5);
+      if (fr.viewW < 40) { const hw = renderer.W / 2 / S * 0.55; tx = Math.max(car.x - hw, Math.min(car.x + hw, tx)); }
+      ty = Math.max(car.y - hh, Math.min(car.y + hh, ty));
+      if (fr.viewW < 40) yMin = Math.max(5, hh * 0.6);   // 竖屏：地面放低一些，少一块空的地面
+    }
     const k = Math.min(1, dt * 3);
     cam.x += (tx - cam.x) * k;
-    cam.y += (Math.max(ty, 5) - cam.y) * k;
+    cam.y += (Math.max(ty, yMin) - cam.y) * k;
     cam.zoom += (zt - cam.zoom) * Math.min(1, dt * 1.5);
     cam.shake *= Math.max(0, 1 - dt * 8);
     if (cam.shake < 0.2) cam.shake = 0;
@@ -670,6 +738,7 @@
   // 调试/自动化钩子
   window.__gravoff = {   // 调试 / 自动化测试用
     get car() { return car; }, set, get course() { return course; }, start, get state() { return state; }, keys,
+    screen: (x, y) => renderer.toScreen(renderer.camv || cam, x, y), get frame() { return renderer.frame; },
     setMode(m) { mode = m; loadCourse(); resetMenuCar(); }, get dbg() { return { pending: !!pending, ended, mode, run, attempts, music: music.track ? music.track.bpm : 0, intensity: music.intensity }; },
   };
 })();

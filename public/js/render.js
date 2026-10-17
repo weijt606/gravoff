@@ -20,6 +20,7 @@
     constructor(canvas) {
       this.cv = canvas; this.ctx = canvas.getContext('2d');
       this.W = 0; this.H = 0; this.dpr = 1; this.S = 28;
+      this.frame = { top: 0, bottom: 0, viewW: 40 };
       const r = rand(7);
       this.stars = Array.from({ length: 90 }, () => ({ x: r(), y: r() * 0.3, s: r() * 1.2 + 0.3, t: r() * 6 }));
       // 远景：试验场的测试台架、储罐、水塔、厂房（剪影，循环平铺）
@@ -97,14 +98,19 @@
       this.W = window.innerWidth; this.H = window.innerHeight;
       this.cv.width = Math.round(this.W * this.dpr); this.cv.height = Math.round(this.H * this.dpr);
       this.cv.style.width = this.W + 'px'; this.cv.style.height = this.H + 'px';
-      this.baseS = Math.min(this.W / 40, this.H / 20.5);   // 视野：横向约 40 m、纵向约 20 m（zoom = 1 时）
+      // 视野：横向约 40 m、纵向约 20 m（zoom = 1 时）。触屏时画面中心放在上方面板和下方按钮之间
+      const F = this.frame;
+      this.cy = F.top + (this.H - F.top - F.bottom) / 2;
+      this.baseS = Math.min(this.W / F.viewW, (this.H - (F.top + F.bottom) / 2) / 20.5);
     }
+    // 触屏布局：top / bottom 是被面板和按钮挡住的高度（px），viewW 是横向视野（m）
+    setFrame(f) { this.frame = f || { top: 0, bottom: 0, viewW: 40 }; this.resize(); }
 
     worldTf(cam) {
       const S = this.S, d = this.dpr;
-      this.ctx.setTransform(d * S, 0, 0, -d * S, d * (this.W / 2 - cam.x * S), d * (this.H / 2 + cam.y * S));
+      this.ctx.setTransform(d * S, 0, 0, -d * S, d * (this.W / 2 - cam.x * S), d * (this.cy + cam.y * S));
     }
-    toScreen(cam, x, y) { return [this.W / 2 + (x - cam.x) * this.S, this.H / 2 - (y - cam.y) * this.S]; }
+    toScreen(cam, x, y) { return [this.W / 2 + (x - cam.x) * this.S, this.cy - (y - cam.y) * this.S]; }
 
     draw(st) {
       const { cam, car, time } = st;
@@ -116,7 +122,7 @@
       this.camv = cv;
 
       this.drawSky(cv, time);
-      this.view = { vx0: cv.x - W / 2 / S - 6, vx1: cv.x + W / 2 / S + 6, vy0: cv.y - H / 2 / S - 6, vy1: cv.y + H / 2 / S + 6 };
+      this.view = { vx0: cv.x - W / 2 / S - 6, vx1: cv.x + W / 2 / S + 6, vy0: cv.y - (H - this.cy) / S - 6, vy1: cv.y + this.cy / S + 6 };
 
       this.worldTf(cv);
       this.drawLamps(time, false);

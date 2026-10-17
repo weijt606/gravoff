@@ -24,6 +24,10 @@
       'jet.on': '喷射', 'jet.brake': '反推', 'jet.idle': '待命', 'jet.locked': '锁定',
       'fan.low': '吸力不足', 'fan.waste': '吸力富余', 'fan.ok': '吸力 OK', 'fan.grip': '吸地 · 抓地+', 'fan.yield': '喷气时让位',
       'touch.brake': '刹车', 'touch.go': '加速', 'touch.fanUp': '风扇＋', 'touch.fanDn': '风扇－', 'touch.retry': '重来', 'touch.flip': '翻转', 'touch.jet': '推进',
+      'touch.fans': '风扇±', 'sound.on': '声音：开', 'sound.off': '声音：关',
+      'how.fansT': '吸附风扇功率：不低于白线，开太大很耗能（也可以拖动上方的滑块）',
+      'how.stopT': '飞越车阵落地后要停稳才结算：开大风扇会吸住地面减速（风扇越大停得越快），再按 ◀ 刹车会更猛',
+      'how.noteT': '游戏中屏幕上方会实时提示下一步。◀ 和 ▶ 之间可以按住直接滑动切换，不用抬手。',
       'state.empty': '能量耗尽', 'state.kick': 'KICKFLIP', 'state.roll': '翻正中', 'state.inv': '车底朝上', 'state.hover': '悬停', 'state.air': '腾空',
       'state.crash': '翻车', 'state.drive': '贴地行驶', 'state.ceiling': '倒挂行驶', 'state.climb': '爬升',
       'start.loop': '冲上半环，倒挂行驶', 'start.kick': '飞越 5 辆车，落到目标点',
@@ -90,7 +94,7 @@
       'how.note': '游戏中屏幕上方会实时提示下一步。触屏设备请使用屏幕按钮。',
       'key.space': '空格',
       'key.desk': { SPACE: '空格', UP: '↑', DOWN: '↓', LEFT: '←', RIGHT: '→', F: 'F', G: 'G', R: 'R' },
-      'key.touch': { SPACE: '「推进」', UP: '「风扇＋」', DOWN: '「风扇－」', LEFT: '◀', RIGHT: '▶', F: '「翻转」', G: '「侧滚」', R: '「重来」' },
+      'key.touch': { SPACE: '「推进」', UP: '「风扇＋」', DOWN: '「风扇－」', LEFT: '◀', RIGHT: '▶', F: '「翻转」', G: '「侧滚」', R: '「↺」' },
     },
     en: {
       'title': 'GRAVOFF · Gravity is optional. Landing isn’t.',
@@ -108,6 +112,10 @@
       'jet.on': 'FIRING', 'jet.brake': 'REVERSE', 'jet.idle': 'IDLE', 'jet.locked': 'LOCKED',
       'fan.low': 'TOO WEAK', 'fan.waste': 'OVERKILL', 'fan.ok': 'GRIP OK', 'fan.grip': 'GRIP+', 'fan.yield': 'YIELD TO JETS',
       'touch.brake': 'Brake', 'touch.go': 'Go', 'touch.fanUp': 'Fan +', 'touch.fanDn': 'Fan −', 'touch.retry': 'Retry', 'touch.flip': 'Flip', 'touch.jet': 'Boost',
+      'touch.fans': 'Fan ±', 'sound.on': 'Sound: On', 'sound.off': 'Sound: Off',
+      'how.fansT': 'Fan power: stay above the white line – overdoing it drains energy fast (you can also drag the slider at the top)',
+      'how.stopT': 'Car Jump scores once you stop: fan suction slows the car on the ground (more fan, shorter stop); ◀ brakes even harder',
+      'how.noteT': 'Hints at the top tell you what to do next. Slide your thumb between ◀ and ▶ without lifting it.',
       'state.empty': 'NO ENERGY', 'state.kick': 'KICKFLIP', 'state.roll': 'Righting', 'state.inv': 'Upside down', 'state.hover': 'Hovering', 'state.air': 'Airborne',
       'state.crash': 'Crashed', 'state.drive': 'Driving', 'state.ceiling': 'Inverted', 'state.climb': 'Climbing',
       'start.loop': 'Hit the loop and drive upside down', 'start.kick': 'Clear 5 cars and land on the target',
@@ -174,7 +182,7 @@
       'how.note': 'In-game hints at the top tell you what to do next. On touch screens, use the on-screen buttons.',
       'key.space': 'SPACE',
       'key.desk': { SPACE: 'Space', UP: '↑', DOWN: '↓', LEFT: '←', RIGHT: '→', F: 'F', G: 'G', R: 'R' },
-      'key.touch': { SPACE: '[BOOST]', UP: '[FAN +]', DOWN: '[FAN −]', LEFT: '◀', RIGHT: '▶', F: '[FLIP]', G: '[ROLL]', R: '[RETRY]' },
+      'key.touch': { SPACE: '[BOOST]', UP: '[FAN +]', DOWN: '[FAN −]', LEFT: '◀', RIGHT: '▶', F: '[FLIP]', G: '[ROLL]', R: '[↺]' },
     },
   };
   // 语言：玩家手动切换过就用他的选择；否则按浏览器的语言偏好列表，第一个是中文（zh / zh-CN / zh-TW / zh-HK…）就用中文，其他一律英文
@@ -194,6 +202,10 @@
     let s = D[lang][key];
     if (s == null) s = D.zh[key];
     if (s == null) return key;
+    return fill(s, vars);
+  }
+  // 把文案里的 {SPACE} {F} … 换成键盘按键或触屏按钮名（结算建议等不在词典里的文字也用它）
+  function fill(s, vars) {
     const keys = D[lang][touch ? 'key.touch' : 'key.desk'];
     return String(s).replace(/\{(\w+)\}/g, (m, k) => (vars && k in vars ? vars[k] : keys[k] != null ? keys[k] : m));
   }
@@ -202,6 +214,7 @@
     r.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
     r.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
     r.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+    r.querySelectorAll('[data-i18n-label]').forEach((el) => { el.setAttribute('aria-label', t(el.dataset.i18nLabel)); el.title = el.getAttribute('aria-label'); });
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     document.title = t('title');
   }
@@ -213,5 +226,5 @@
     apply();
     listeners.forEach((fn) => fn(l));
   }
-  CF.I18N = { t, apply, set, onChange: (fn) => listeners.push(fn), get lang() { return lang; } };
+  CF.I18N = { t, fill, apply, set, onChange: (fn) => listeners.push(fn), get lang() { return lang; } };
 })(window);

@@ -52,18 +52,23 @@
 
   <div id="touch" class="hidden">
     <div class="tc tc-left">
-      <button data-key="ArrowLeft">◀<small data-i18n="touch.brake">刹车</small></button>
-      <button data-key="ArrowRight">▶<small data-i18n="touch.go">加速</small></button>
+      <div class="tc-row">
+        <button data-key="KeyF" class="sm trick" data-i18n="touch.flip">翻转</button>
+        <button data-key="KeyG" class="sm trick" data-i18n="touch.roll">侧滚</button>
+      </div>
+      <div class="tc-row">
+        <button data-key="ArrowLeft">◀<small data-i18n="touch.brake">刹车</small></button>
+        <button data-key="ArrowRight">▶<small data-i18n="touch.go">加速</small></button>
+      </div>
+    </div>
+    <div class="tc tc-sys">
+      <button data-key="KeyP" class="ico" id="tPause" data-i18n-label="how.pause" aria-label="pause">❚❚</button>
+      <button data-key="KeyR" class="ico" id="tRetry" data-i18n-label="touch.retry" aria-label="retry">↺</button>
     </div>
     <div class="tc tc-right">
       <div class="tc-col">
         <button data-key="ArrowUp" class="sm" data-i18n="touch.fanUp">风扇＋</button>
         <button data-key="ArrowDown" class="sm" data-i18n="touch.fanDn">风扇－</button>
-        <button data-key="KeyR" class="sm" data-i18n="touch.retry">重来</button>
-      </div>
-      <div class="tc-col">
-        <button data-key="KeyF" class="sm"><span data-i18n="touch.flip">翻转</span></button>
-        <button data-key="KeyG" class="sm"><span data-i18n="touch.roll">侧滚</span></button>
       </div>
       <button data-key="Space" class="big" data-i18n="touch.jet">推进</button>
     </div>
@@ -128,20 +133,24 @@
     <div class="card how">
       <h2 id="howTitle" data-i18n="how.title">操作说明</h2>
       <dl class="keys-list">
-        <dt><kbd>→</kbd></dt><dd data-i18n="how.throttle"></dd>
-        <dt><kbd>←</kbd></dt><dd data-i18n="how.brake"></dd>
-        <dt><kbd>↑</kbd><kbd>↓</kbd></dt><dd data-i18n="how.fans"></dd>
-        <dt><kbd class="wide" data-i18n="key.space">空格</kbd></dt><dd data-i18n="how.jets"></dd>
-        <dt><kbd>F</kbd></dt><dd data-i18n="how.kick"></dd>
-        <dt><kbd>G</kbd></dt><dd data-i18n="how.barrel"></dd>
+        <dt><kbd>→</kbd><b class="tk">▶</b></dt><dd data-i18n="how.throttle"></dd>
+        <dt><kbd>←</kbd><b class="tk">◀</b></dt><dd data-i18n="how.brake"></dd>
+        <dt><kbd>↑</kbd><kbd>↓</kbd><b class="tk" data-i18n="touch.fans">风扇±</b></dt><dd data-i18n="how.fans" id="howFans"></dd>
+        <dt><kbd class="wide" data-i18n="key.space">空格</kbd><b class="tk" data-i18n="touch.jet">推进</b></dt><dd data-i18n="how.jets"></dd>
+        <dt><kbd>F</kbd><b class="tk" data-i18n="touch.flip">翻转</b></dt><dd data-i18n="how.kick"></dd>
+        <dt><kbd>G</kbd><b class="tk" data-i18n="touch.roll">侧滚</b></dt><dd data-i18n="how.barrel"></dd>
       </dl>
-      <p class="how-note" data-i18n="how.stop"></p>
-      <div class="keys-mini">
+      <p class="how-note" data-i18n="how.stop" id="howStop"></p>
+      <div class="keys-mini desk-only">
         <span><kbd>R</kbd> <span data-i18n="how.retry"></span></span>
         <span><kbd>P</kbd> <span data-i18n="how.pause"></span></span>
         <span><kbd>M</kbd> <span data-i18n="how.mute"></span></span>
       </div>
-      <p class="how-note" data-i18n="how.note"></p>
+      <div class="keys-mini touch-only">
+        <span><b class="tk">↺</b> <span data-i18n="how.retry"></span></span>
+        <span><b class="tk">❚❚</b> <span data-i18n="how.pause"></span> · <span data-i18n="how.mute"></span></span>
+      </div>
+      <p class="how-note" data-i18n="how.note" id="howNote"></p>
       <button class="cta" id="howClose" data-i18n="btn.gotIt">知道了</button>
     </div>
   </div>
@@ -152,6 +161,7 @@
       <button class="cta" id="resumeBtn" data-i18n="btn.resume">继续</button>
       <button class="ghost" id="retryBtn" data-i18n="btn.retry">重来这一次</button>
       <button class="ghost" id="restartBtn" data-i18n="btn.restart">从头开始</button>
+      <button class="ghost touch-only" id="soundBtn"></button>
       <button class="ghost" id="menuBtn" data-i18n="btn.toMenu">返回菜单</button>
     </div>
   </div>
