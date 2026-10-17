@@ -439,3 +439,6 @@ body.touch .hint { top: 96px; bottom: auto; max-width: min(560px, 56vw); font-si
   body.touch .tc button.big { width: 84px; height: 84px; }
   body.touch .tc button.ico { width: 40px; height: 40px; }
 }
+
+/* 暂停菜单：当前曲目，点一下换下一首 */
+#trackBtn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #9fe3ff; }

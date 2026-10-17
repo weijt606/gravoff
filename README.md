@@ -8,7 +8,7 @@
 
 **Gravity is optional. Landing isn't.**
 
-A tiny browser game about a sports car with suction fans and cold-gas thrusters: drive upside down, fly over a row of cars, and land on the target. Plain JavaScript + Canvas, no build step, no dependencies. Works on desktop and on phones (portrait or landscape).
+A tiny browser game about a sports car with suction fans and cold-gas thrusters: drive upside down, fly over a row of cars, and land on the target. Plain JavaScript + Canvas, no build step, no dependencies. Eight original 8-bit tracks, one picked at random each run. Works on desktop and on phones (portrait or landscape).
 
 ![GRAVOFF start screen](docs/images/menu.jpg)
 
@@ -87,6 +87,8 @@ A hard landing, landing upside down or rolling off the cliff halves your score. 
 | Space | Thrusters (hold) |
 | F / G | Kickflip / jet barrel roll |
 | R / P / M | Retry / pause / mute |
+
+The pause menu shows the current track – click it to skip to the next one.
 
 **Phones and tablets** show on-screen buttons in both portrait and landscape:
 - Left thumb: ◀ ▶, plus Flip and Roll, so your right thumb can keep holding Boost.

@@ -1,19 +1,24 @@
 /* 8-bit 背景音乐（原创）
- * 两首曲子都是为本游戏原创编写的旋律，用 WebAudio 实时合成，不使用任何采样或外部音频文件，因此不存在版权问题；
- * 和弦进行与音阶属于通用音乐素材。
+ * 8 首曲子都是为本游戏原创编写的旋律，用 WebAudio 实时合成，不使用任何采样或外部音频文件，因此不存在版权问题；
+ * 和弦进行、音阶和节奏型属于通用音乐素材。每局随机播放一首（不和上一首重复），暂停菜单里可以换下一首。
  *
- * 两首曲子用两套不同的 8-bit 音色（inst）：
- *   loop「Inverted Deck」—— 8-bit 主机风格：50% 方波主旋律 + 重颤音、25% 脉冲 16 分音符琶音、三角波奔马贝斯、
- *                          切分低沉底鼓、八分音符镲；5-bit 量化 + 低通，偏暗、偏厚
- *   kick「Kickflip Over Five」—— 掌机风格：12.5% 细脉冲主旋律 + 回声、32 分音符三音快速琶音、25% 脉冲八度贝斯、
- *                          四拍底鼓 + 拍手军鼓 + 16 分音符镲和开镲；3-bit 量化，偏亮、偏颗粒
+ * 每首曲子有自己的音色（inst）和节奏型，风格各不相同：
+ *   loop     Inverted Deck       A 小调 132 BPM：8-bit 主机风格，方波主旋律 + 三角波奔马贝斯，偏暗偏厚
+ *   kick     Kickflip Over Five  D 大调 152 BPM：掌机风格，细脉冲主旋律 + 回声，四拍底鼓 + 拍手，偏亮
+ *   desert   Desert Sunset       E 小调 100 BPM：慢速半拍鼓，三角波长音 + 颤音，西部黄昏
+ *   neon     Neon Drift          C 小调 118 BPM：合成器浪潮，反拍镲 + 八度贝斯 + 回声
+ *   shuffle  Pit Lane Shuffle    G 布鲁斯 136 BPM：摇摆节奏（swing），行走贝斯，属七和弦
+ *   hyper    Hyper Boost         D 小调 174 BPM：碎拍鼓（底鼓 1、3.5 拍），16 分音符镲，最快最紧张
+ *   march    Launch Pad March    降 B 大调 112 BPM：进行曲，军鼓滚奏，根音 - 五度贝斯
+ *   waltz    Zero-G Waltz        A 大调 3/4 拍：圆舞曲，"嘭 - 恰 - 恰"
  *
  * 跟游戏节奏联动（setIntensity）：
  *   0 = 地面行驶：鼓 + 贝斯
  *   1 = 爬上半环 / 过起飞线：加入主旋律
  *   2 = 倒挂 / 腾空 / 降落：再加入快速琶音，紧张感最强
  *
- * 记谱：每小节 16 个十六分音符，用空格分隔；音名如 E5、F#4；"." 延续上一个音；"-" 休止
+ * 记谱：每小节 steps 个十六分音符（默认 16，3/4 拍为 12），用空格分隔；音名如 E5、F#4；"." 延续上一个音；"-" 休止
+ * 贝斯数组里 -1 表示这一步不弹
  */
 (function (root) {
   'use strict';
@@ -36,7 +41,7 @@
   const TRACKS = {
     // 倒立半环「Inverted Deck」：A 小调，132 BPM，切分底鼓，紧张向上
     loop: {
-      bpm: 132,
+      bpm: 132, title: { en: 'Inverted Deck', zh: '倒挂甲板' },
       chords: [['A2', 0, 3, 7], ['F2', 0, 4, 7], ['C3', 0, 4, 7], ['G2', 0, 4, 7], ['A2', 0, 3, 7], ['F2', 0, 4, 7], ['G2', 0, 4, 7], ['E2', 0, 4, 7]],
       lead: [
         'E5 . . C5 . A4 . . B4 C5 D5 . E5 . . .',
@@ -56,7 +61,7 @@
     },
     // 飞越车阵「Kickflip Over Five」：D 大调，152 BPM，四拍底鼓，明快冲刺
     kick: {
-      bpm: 152,
+      bpm: 152, title: { en: 'Kickflip Over Five', zh: '飞越五车' },
       chords: [['D3', 0, 4, 7], ['B2', 0, 3, 7], ['G2', 0, 4, 7], ['A2', 0, 4, 7], ['D3', 0, 4, 7], ['B2', 0, 3, 7], ['G2', 0, 4, 7], ['A2', 0, 4, 7]],
       lead: [
         'D5 . F#5 . A5 . F#5 . D5 . E5 F#5 . . A4 .',
@@ -73,6 +78,126 @@
       inst: { lead: 'p12', leadVol: 0.13, vib: 0.008, echo: true, arp: 'p12', arpNotes: 3, arpVol: 0.05, bass: 'p25', bassVol: 0.15,
         bits: 8, lowpass: 0, kickHz: [190, 55], snareHz: 2600, clap: true, level: 2.2 },
       fill: 'A4 B4 C#5 D5 E5 F#5 G5 A5 B5 C#6 D6 . E6 . F#6 .',
+    },
+    // 沙漠落日「Desert Sunset」：E 小调，100 BPM，半拍鼓，三角波长音
+    desert: {
+      bpm: 100, title: { en: 'Desert Sunset', zh: '沙漠落日' },
+      chords: [['E2', 0, 3, 7], ['C2', 0, 4, 7], ['D2', 0, 4, 7], ['E2', 0, 3, 7], ['E2', 0, 3, 7], ['C2', 0, 4, 7], ['D2', 0, 4, 7], ['B1', 0, 4, 7]],
+      lead: [
+        'B4 . . . E5 . . . G5 . F#5 . E5 . . .',
+        'G5 . . . E5 . C5 . . . E5 . G5 . . .',
+        'F#5 . . . D5 . A4 . . . D5 . F#5 . A5 .',
+        'G5 . . . . . F#5 . E5 . . . - - - -',
+        'B5 . . . A5 . G5 . F#5 . . . E5 . . .',
+        'G5 . . . E5 . . . C5 . E5 . G5 . A5 .',
+        'A5 . . . F#5 . D5 . . . A4 . D5 . F#5 .',
+        'D#5 . . . F#5 . . . B5 . . . A5 . F#5 .',
+      ],
+      kick: [0, 10], snare: [8], ghost: [], hatAccent: [4, 12], hats: [0, 4, 8, 12], openHat: [],
+      bass: [0, -1, -1, -1, -1, -1, 7, -1, 12, -1, -1, -1, 7, -1, -1, -1],
+      inst: { lead: 'triangle', leadVol: 0.16, vib: 0.025, echo: true, arp: 'p25', arpNotes: 1, arpVol: 0.035, bass: 'triangle', bassVol: 0.26, bassLen: 2,
+        bits: 16, lowpass: 2400, kickHz: [110, 40], snareHz: 1200, clap: false, level: 0.8 },
+      fill: 'E5 . F#5 . G5 . A5 . B5 . . . D#5 . F#5 .',
+    },
+    // 霓虹漂移「Neon Drift」：C 小调，118 BPM，反拍镲 + 八度贝斯
+    neon: {
+      bpm: 118, title: { en: 'Neon Drift', zh: '霓虹漂移' },
+      chords: [['C3', 0, 3, 7], ['G#2', 0, 4, 7], ['D#3', 0, 4, 7], ['A#2', 0, 4, 7], ['C3', 0, 3, 7], ['G#2', 0, 4, 7], ['A#2', 0, 4, 7], ['G2', 0, 4, 7]],
+      lead: [
+        'G5 . . . D#5 . . C5 . . D#5 . G5 . . .',
+        'G#5 . . . G5 . D#5 . C5 . . . D#5 . . .',
+        'A#5 . . . G5 . . D#5 . . G5 . A#5 . C6 .',
+        'A#5 . . . . . G#5 . G5 . F5 . D5 . . .',
+        'C6 . . . G5 . . D#5 . . G5 . C6 . D6 .',
+        'D#6 . . . C6 . G#5 . . . D#5 . G#5 . . .',
+        'D6 . . . A#5 . F5 . . . D5 . F5 . A#5 .',
+        'B5 . . . D6 . . . G5 . . . F5 . D5 .',
+      ],
+      kick: [0, 4, 8, 12], snare: [4, 12], ghost: [], hatAccent: [2, 6, 10, 14], hats: [2, 6, 10, 14], openHat: [],
+      bass: [0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 12, 0],
+      inst: { lead: 'p25', leadVol: 0.12, vib: 0.015, echo: true, arp: 'p12', arpNotes: 2, arpVol: 0.045, bass: 'p50', bassVol: 0.14,
+        bits: 32, lowpass: 2600, kickHz: [150, 45], snareHz: 1800, clap: true, level: 2.1 },
+      fill: 'C5 D5 D#5 F5 G5 . G#5 . A#5 . B5 . D6 . . .',
+    },
+    // 维修区摇摆「Pit Lane Shuffle」：G 布鲁斯，136 BPM，摇摆八分音符 + 行走贝斯
+    shuffle: {
+      bpm: 136, title: { en: 'Pit Lane Shuffle', zh: '维修区摇摆' },
+      chords: [['G2', 0, 4, 10], ['C3', 0, 4, 10], ['G2', 0, 4, 10], ['G2', 0, 4, 10], ['C3', 0, 4, 10], ['C3', 0, 4, 10], ['G2', 0, 4, 10], ['D3', 0, 4, 10]],
+      lead: [
+        'G4 . A#4 B4 D5 . G4 . F5 . D5 . B4 . G4 .',
+        'E5 . G5 . A#5 . G5 E5 . . C5 . E5 . . .',
+        'D5 . B4 . G4 . A#4 B4 . . D5 . G5 . . .',
+        'F5 . . E5 D5 . B4 . A4 . G4 . - . . .',
+        'C5 . E5 . G5 . A#5 . . . G5 . E5 . C5 .',
+        'D#5 E5 . . G5 . E5 . D#5 E5 . . C5 . . .',
+        'B4 . D5 . G5 . F5 . D5 . B4 . A4 . G4 .',
+        'F#5 . A5 . C6 . A5 . F#5 . D5 . C5 . A4 .',
+      ],
+      kick: [0, 8, 11], snare: [4, 12], ghost: [7, 15], hatAccent: [2, 6, 10, 14], hats: [0, 2, 4, 6, 8, 10, 12, 14], openHat: [14],
+      bass: [0, -1, 4, -1, 7, -1, 9, -1, 10, -1, 9, -1, 7, -1, 4, -1],
+      inst: { lead: 'p50', leadVol: 0.1, vib: 0.02, echo: false, arp: 'p25', arpNotes: 1, arpVol: 0.04, bass: 'triangle', bassVol: 0.26, bassLen: 1.6,
+        bits: 16, lowpass: 3600, kickHz: [140, 45], snareHz: 2000, clap: false, swing: 0.66, level: 0.85 },
+      fill: 'G5 F5 D5 . B4 A#4 A4 G4 . . D5 . G5 . . .',
+    },
+    // 极速推进「Hyper Boost」：D 小调，174 BPM，碎拍鼓
+    hyper: {
+      bpm: 174, title: { en: 'Hyper Boost', zh: '极速推进' },
+      chords: [['D3', 0, 3, 7], ['A#2', 0, 4, 7], ['C3', 0, 4, 7], ['A2', 0, 3, 7], ['D3', 0, 3, 7], ['A#2', 0, 4, 7], ['G2', 0, 3, 7], ['A2', 0, 4, 7]],
+      lead: [
+        'D5 . F5 . A5 . D6 . C6 . A5 . F5 . E5 .',
+        'D5 . F5 . A#5 . D6 . C6 . A#5 . F5 . D5 .',
+        'E5 . G5 . C6 . E6 . D6 . C6 . G5 . E5 .',
+        'A5 . . . E5 . . . C5 . E5 . A5 . . .',
+        'D6 . A5 . F5 . D5 . F5 . A5 . D6 . E6 .',
+        'F6 . D6 . A#5 . F5 . A#5 . D6 . F6 . . .',
+        'G6 . D6 . A#5 . G5 . A#5 . D6 . G6 . F6 .',
+        'E6 . C#6 . A5 . E5 . C#5 . E5 . A5 . . .',
+      ],
+      kick: [0, 10], snare: [4, 12], ghost: [7, 9, 15], hatAccent: [2, 6, 10, 14], hats: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], openHat: [],
+      bass: [0, -1, -1, 0, -1, -1, 12, -1, -1, -1, 0, -1, -1, 7, -1, -1],
+      inst: { lead: 'p12', leadVol: 0.11, vib: 0, echo: true, arp: 'p12', arpNotes: 3, arpVol: 0.04, bass: 'p50', bassVol: 0.16, bassLen: 2,
+        bits: 8, lowpass: 0, kickHz: [200, 50], snareHz: 2800, clap: false, level: 2.1 },
+      fill: 'D6 C6 A5 F5 D6 C6 A5 F5 E6 C#6 A5 E5 E6 C#6 A5 E5',
+    },
+    // 发射台进行曲「Launch Pad March」：降 B 大调，112 BPM，军鼓滚奏
+    march: {
+      bpm: 112, title: { en: 'Launch Pad March', zh: '发射台进行曲' },
+      chords: [['A#2', 0, 4, 7], ['F2', 0, 4, 7], ['G2', 0, 3, 7], ['D#2', 0, 4, 7], ['A#2', 0, 4, 7], ['F2', 0, 4, 7], ['D#2', 0, 4, 7], ['F2', 0, 4, 7]],
+      lead: [
+        'A#4 . . F4 A#4 . D5 . F5 . . . D5 . A#4 .',
+        'C5 . . A4 C5 . F5 . A5 . . . F5 . C5 .',
+        'D5 . . . G5 . . F5 D5 . . . A#4 . G4 .',
+        'D#5 . . . G5 . . . A#5 . . . G5 . D#5 .',
+        'F5 . . D5 F5 . A#5 . D6 . . . A#5 . F5 .',
+        'A5 . . F5 A5 . C6 . F6 . . . C6 . A5 .',
+        'G5 . . D#5 G5 . A#5 . D#6 . . . D6 . C6 .',
+        'A#5 . . . A5 . . . C6 . . . A5 . F5 .',
+      ],
+      kick: [0, 8], snare: [4, 12, 14, 15], ghost: [6, 13], hatAccent: [], hats: [0, 4, 8, 12], openHat: [],
+      bass: [0, -1, -1, -1, 7, -1, -1, -1, 0, -1, -1, -1, 7, -1, -1, -1],
+      inst: { lead: 'p50', leadVol: 0.11, vib: 0.015, echo: false, arp: 'p25', arpNotes: 2, arpVol: 0.035, bass: 'triangle', bassVol: 0.28, bassLen: 2,
+        bits: 32, lowpass: 3000, kickHz: [120, 40], snareHz: 2200, clap: false, level: 0.9 },
+      fill: 'F5 . F5 F5 G5 . G5 G5 A5 . A5 A5 C6 . . .',
+    },
+    // 零重力圆舞曲「Zero-G Waltz」：A 大调，3/4 拍（每小节 12 个十六分音符），"嘭 - 恰 - 恰"
+    waltz: {
+      bpm: 168, steps: 12, title: { en: 'Zero-G Waltz', zh: '零重力圆舞曲' },
+      chords: [['A2', 0, 4, 7], ['E2', 0, 4, 7], ['F#2', 0, 3, 7], ['D2', 0, 4, 7], ['A2', 0, 4, 7], ['E2', 0, 4, 7], ['D2', 0, 4, 7], ['E2', 0, 4, 7]],
+      lead: [
+        'C#5 . . . E5 . . . A5 . . .',
+        'G#5 . . . . . F#5 . E5 . . .',
+        'F#5 . . . A5 . . . C#6 . . .',
+        'B5 . . . A5 . F#5 . D5 . . .',
+        'E5 . . . A5 . . . C#6 . E6 .',
+        'D6 . . . B5 . . . G#5 . E5 .',
+        'F#5 . . . A5 . . . D6 . . .',
+        'E6 . . . D6 . B5 . G#5 . . .',
+      ],
+      kick: [0], snare: [], ghost: [4, 8], hatAccent: [], hats: [0, 4, 8], openHat: [],
+      bass: [0, -1, -1, -1, 12, -1, -1, -1, 7, -1, -1, -1],
+      inst: { lead: 'p25', leadVol: 0.12, vib: 0.02, echo: true, arp: 'p12', arpNotes: 1, arpVol: 0.04, bass: 'triangle', bassVol: 0.26, bassLen: 2,
+        bits: 16, lowpass: 3000, kickHz: [120, 45], snareHz: 1600, clap: false, level: 0.92 },
+      fill: 'A5 G#5 F#5 E5 D5 C#5 B4 C#5 E5 . G#5 .',
     },
   };
   for (const k in TRACKS) { TRACKS[k].leadNotes = TRACKS[k].lead.map(parse); TRACKS[k].fillNotes = parse(TRACKS[k].fill); }
@@ -101,7 +226,7 @@
       if (this.out) return true;
       this.out = s.ctx.createGain(); this.out.gain.value = 0;
       this.out.connect(s.master);
-      this.waves = { p12: this.pulse(0.125), p25: this.pulse(0.25), p50: this.pulse(0.5) };
+      this.waves = { p12: this.pulse(0.125), p25: this.pulse(0.25), p50: this.pulse(0.5), triangle: 'triangle' };
       return true;
     }
     // 每首曲子一条独立的总线：分层 → 量化失真（位数随曲目）→ 可选低通 → 输出
@@ -121,10 +246,23 @@
       this.layer = layer;
     }
 
+    // 不传曲名：随机选一首，不和上一首重复
+    pick() {
+      const names = Object.keys(TRACKS).filter((k) => k !== this.last);
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    // 下一首（按列表顺序循环）
+    nextTrack() {
+      const names = Object.keys(TRACKS), i = names.indexOf(this.last);
+      this.play(names[(i + 1) % names.length]);
+    }
+    get title() { return this.last ? TRACKS[this.last].title : null; }
     play(name) {
       if (!this.ensure()) return;
-      if (this.track === TRACKS[name] && this.timer) { this.duck(false); return; }
+      if (name && this.track === TRACKS[name] && this.timer) { this.duck(false); return; }
+      name = name || this.pick();
       this.stop(true);
+      this.last = name;
       this.track = TRACKS[name];
       this.buildBus(this.track.inst);
       const ctx = this.sfx.ctx;
@@ -176,7 +314,9 @@
       if (this.next < ctx.currentTime - 0.5) this.next = ctx.currentTime + 0.05;   // 标签页挂起后恢复：跳过积压
       const sd = this.stepDur, L = this.layer, W = this.waves, I = T.inst;
       while (this.next < ctx.currentTime + 0.15) {
-        const bars = T.chords.length, barIdx = Math.floor(this.step / 16), bar = barIdx % bars, st = this.step % 16, t = this.next;
+        const N = T.steps || 16, bars = T.chords.length, barIdx = Math.floor(this.step / N), bar = barIdx % bars, st = this.step % N;
+        // 摇摆：每拍第二个八分音符往后推（swing = 前一个八分音符占一拍的比例）
+        const sw = I.swing ? (4 * I.swing - 2) * sd : 0, t = this.next + (st % 4 === 2 ? sw : st % 4 === 3 ? sw / 2 : 0);
         const ch = T.chords[bar], root = midi(ch[0]);
         const isFill = (barIdx % (bars * 2)) === bars * 2 - 1;   // 每两轮的最后一小节：上行音阶过门
         // 主旋律（+ 可选回声）
@@ -192,14 +332,14 @@
         }
         // 贝斯
         const b = T.bass[st];
-        if (b >= 0) this.note(L.bass, freq(root + b), t, sd * 0.6, I.bass === 'triangle' ? 'triangle' : W[I.bass], st % 4 === 0 ? I.bassVol : I.bassVol * 0.75);
+        if (b >= 0) this.note(L.bass, freq(root + b), t, sd * (I.bassLen || 0.6), I.bass === 'triangle' ? 'triangle' : W[I.bass], st % 4 === 0 ? I.bassVol : I.bassVol * 0.75);
         // 鼓
         if (T.kick.includes(st)) this.kick(t, I.kickHz);
         if (T.snare.includes(st)) this.snare(t, 0.13, I);
         if (T.ghost.includes(st)) this.snare(t, 0.045, I);
         if (T.hats.includes(st)) this.hat(t, T.hatAccent.includes(st) ? 0.06 : 0.025, 0.03);
         if (T.openHat.includes(st)) this.hat(t, 0.04, 0.12);
-        if (isFill && st >= 12) this.snare(t, 0.07, I);   // 过门加鼓
+        if (isFill && st >= N - 4) this.snare(t, 0.07, I);   // 过门加鼓
         this.step++;
         this.next += sd;
       }

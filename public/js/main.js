@@ -187,7 +187,8 @@
   }
   function start() {
     sfx.init();
-    music.play(mode);
+    music.play();   // 每局随机一首（不和上一首重复）
+    syncTrack();
     newRun();
     $('popups').innerHTML = '';
     state = 'play';
@@ -229,6 +230,15 @@
   $('resumeBtn').onclick = togglePause;
   $('retryBtn').onclick = () => { togglePause(); restartAttempt(); };
   $('menuBtn').onclick = toMenu;
+  // 暂停菜单：显示当前曲目，点一下换下一首
+  function syncTrack() {
+    const t = music.title, b = $('trackBtn');
+    if (!t) return;
+    b.textContent = '♪ ' + t[CF.I18N.lang] + '  »';
+    b.title = T('music.next'); b.setAttribute('aria-label', t[CF.I18N.lang] + ' – ' + T('music.next'));
+  }
+  $('trackBtn').onclick = () => { music.nextTrack(); music.duck(true); syncTrack(); };
+  CF.I18N.onChange(syncTrack);
   const syncSound = () => { $('soundBtn').textContent = T(sfx.muted ? 'sound.off' : 'sound.on'); };
   $('soundBtn').onclick = () => { sfx.setMuted(!sfx.muted); syncSound(); };
   CF.I18N.onChange(syncSound); syncSound();

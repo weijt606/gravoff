@@ -317,7 +317,11 @@
         ctx.fillStyle = '#2a2d33'; ctx.fillRect(ox + 0.3, 1.25, 1.6, 0.15);
       }
       const gr = ctx.createLinearGradient(0, pc.y1, 0, 0.2);
-      gr.addColorStop(0, shade(pc.paint, 35)); gr.addColorStop(0.55, pc.paint); gr.addColorStop(1, shade(pc.paint, -70));
+      if (M.flat) {   // 拉丝不锈钢：硬朗的分层反光
+        gr.addColorStop(0, '#e2e5e9'); gr.addColorStop(0.45, '#b8bcc2'); gr.addColorStop(0.46, '#8d9299'); gr.addColorStop(1, '#5b5f66');
+      } else {
+        gr.addColorStop(0, shade(pc.paint, 35)); gr.addColorStop(0.55, pc.paint); gr.addColorStop(1, shade(pc.paint, -70));
+      }
       ctx.fillStyle = gr; ctx.fill(pc.polyPath);
       ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 0.04; ctx.stroke(pc.polyPath);
       // 夕阳在车顶的反光
@@ -331,7 +335,7 @@
       for (const wx of M.wheels) {
         const x = ox + wx, r = M.wr;
         ctx.fillStyle = '#0d0d0f'; ctx.beginPath(); ctx.arc(x, r, r, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#5d646d'; ctx.beginPath(); ctx.arc(x, r, r * 0.58, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = M.flat ? '#3a3d42' : '#5d646d'; ctx.beginPath(); ctx.arc(x, r, r * 0.58, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#1b1d22'; ctx.beginPath(); ctx.arc(x, r, r * 0.18, 0, Math.PI * 2); ctx.fill();
       }
       // 贯穿式灯带（前白后红）
