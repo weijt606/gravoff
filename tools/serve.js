@@ -7,11 +7,13 @@ const ROOT = path.join(__dirname, '..', 'public');
 const PORT = Number(process.env.PORT) || 8080;
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
+  '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon',
 };
 
 http.createServer((req, res) => {
-  let p = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+  let p;
+  try { p = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); } catch (e) { p = null; }   // malformed %-encoding
+  if (!p || p.includes('\0')) { res.writeHead(400).end(); return; }
   if (p.endsWith('/')) p += 'index.html';
   const file = path.join(ROOT, p);
   if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403).end(); return; }
