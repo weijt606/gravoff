@@ -319,14 +319,16 @@
     bests[mode] = { score: r.best, grade: r.bestGrade };
     showBest();
     const bestTxt = esc(r.isBest ? (r.prevBest != null ? T('res.newBest', { prev: r.prevBest }) : T('res.firstLocal')) : T('res.best', { grade: r.bestGrade, score: r.best }));
-    $('resRank').innerHTML = `<span class="dim">${bestTxt}</span>`;
+    $('resRank').innerHTML = `<span class="dim">${r.isBest ? `<b class="pb">${bestTxt}</b>` : bestTxt}</span>`;
     const c = CF.Quips.make(mode, r, null, CF.I18N.lang);
     if (state !== 'finish') return;
     $('resComment').classList.remove('loading');
-    $('resComment').textContent = c.comment;
-    $('resTip').textContent = c.tip ? '💡 ' + CF.I18N.fill(c.tip) : '';
+    $('resComment').textContent = noEmoji(c.comment);
+    $('resTip').textContent = c.tip ? CF.I18N.fill(noEmoji(c.tip)) : '';   // 先去 emoji 再填按键名（触屏的 ◀ 不能被去掉）；前面的灯泡图标由 CSS 画
   }
 
+  // 点评文字里不要 emoji / 表情符号
+  const noEmoji = (t) => String(t || '').replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\p{Regional_Indicator}\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '').replace(/\s{2,}/g, ' ').trim();
   function renderResult(r) {
     const s = r.stats, g = $('resGrade');
     $('resMode').textContent = T('res.mode', { mode: modeName(mode) });
