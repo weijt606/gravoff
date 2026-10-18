@@ -100,6 +100,10 @@
   tc.addEventListener('contextmenu', (e) => e.preventDefault());
   // 阻止触摸之后浏览器补发的 click：否则按 ❚❚ 弹出暂停菜单后，这次 click 会落到菜单里的按钮上
   tc.addEventListener('touchstart', (e) => { if (e.target.closest('button')) e.preventDefault(); }, { passive: false });
+  // 声音被系统挂起（切后台、来电、上面没解锁成功）时，下一次点击 / 抬手 / 按键就恢复。
+  // iOS 只认 touchend / click / keydown 这类手势，pointerdown 和 touchstart 不算
+  const resumeAudio = () => { if (sfx.ctx && sfx.ctx.state !== 'running') sfx.init(); };
+  for (const t of ['touchend', 'click', 'keydown']) addEventListener(t, resumeAudio, { capture: true, passive: true });
   function releaseTouch() { for (const b of held.values()) b.classList.remove('on'); held.clear(); }
   addEventListener('blur', releaseTouch);
   // 手机切到别的应用 / 锁屏：自动暂停，回来不会直接摔车

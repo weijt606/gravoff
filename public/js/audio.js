@@ -6,10 +6,14 @@
   class Sfx {
     constructor() { this.ctx = null; this.muted = false; }
     init() {
-      if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
+      // iOS 切后台回来是 'interrupted'，不只是 'suspended'；resume 只在用户手势里才生效
+      if (this.ctx) { if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {}); return; }
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       const ctx = this.ctx = new AC();
+      if (ctx.state !== 'running') ctx.resume().catch(() => {});
+      // 老版本 iOS：要在手势里真正播一段声音才算解锁
+      const blip = ctx.createBufferSource(); blip.buffer = ctx.createBuffer(1, 1, 22050); blip.connect(ctx.destination); blip.start(0);
       this.master = ctx.createGain(); this.master.gain.value = this.muted ? 0 : 0.7;
       this.master.connect(ctx.destination);
       // 音效总线：比背景音乐低一些（音乐直接接 master，见 music.js）
