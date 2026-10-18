@@ -717,6 +717,7 @@
     cam.x = car.x + 8; cam.y = car.y + 3;
   }
   let last = performance.now(), acc = 0, time = 0;
+  const MENU_INPUT = { throttle: 0, lift: false, kick: false };
   resetMenuCar();
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -734,7 +735,9 @@
       spawnParticles();
       updateHud(dt);
     } else if (state === 'menu') {
-      for (let i = 0; i < 8; i++) CF.stepCar(car, course, { throttle: 0, lift: false, kick: false }, set, DT);
+      // 开始页的演示车也走同一个固定步长累加器，120 Hz 屏或省电模式下速度都一样
+      acc += dt;
+      while (acc >= DT) { CF.stepCar(car, course, MENU_INPUT, set, DT); acc -= DT; }
       if (!reduceMotion) spawnParticles();
     }
     updateParticles(dt);
